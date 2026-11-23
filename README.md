@@ -1,6 +1,8 @@
 # UAS-Pemrograman-Dasar-Kelompok-7
 Repisitory pengumpulan tugas UAS Vokasi UB
+
 Judul :  Aplikasi Console Data Mahasiswa dan Nilai Berbasis TypeScript
+
 Nama Kelompok 7 :
 1. Maulana Majid Wijaya
 2. Mutiara Azzahrani Dwi Nur  Ifada
