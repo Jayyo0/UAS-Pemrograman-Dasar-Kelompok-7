@@ -126,29 +126,42 @@ async function inputNilai(label: string): Promise<number> {
 async function tambahMahasiswa(): Promise<void> {
   console.log("\n===== TAMBAH MAHASISWA =====");
 
+  // Meminta input NIM
   const nim = (await tanya("Masukkan NIM: ")).trim();
 
+  // Validasi NIM kosong
   if (nim === "") {
     console.log("NIM tidak boleh kosong.");
     return;
   }
 
+  // Validasi NIM hanya boleh angka
+  if (!/^\d+$/.test(nim)) {
+    console.log("NIM hanya boleh berisi angka.");
+    return;
+  }
+
+  // Memeriksa NIM duplikat
   if (cariMahasiswa(nim) !== undefined) {
     console.log("NIM sudah terdaftar.");
     return;
   }
 
+  // Meminta input nama
   const nama = (await tanya("Masukkan nama: ")).trim();
 
+  // Validasi nama kosong
   if (nama === "") {
     console.log("Nama tidak boleh kosong.");
     return;
   }
 
+  // Meminta input nilai mahasiswa
   const nilaiTugas = await inputNilai("Nilai Tugas");
   const nilaiUTS = await inputNilai("Nilai UTS");
   const nilaiUAS = await inputNilai("Nilai UAS");
 
+  // Membuat objek mahasiswa baru
   const mahasiswaBaru: Mahasiswa = {
     nim,
     nama,
@@ -157,6 +170,7 @@ async function tambahMahasiswa(): Promise<void> {
     nilaiUAS,
   };
 
+  // Menambahkan data ke dalam daftar mahasiswa
   daftarMahasiswa.push(mahasiswaBaru);
 
   console.log("\nData mahasiswa berhasil ditambahkan!");
