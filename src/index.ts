@@ -1,7 +1,9 @@
-
 import * as readline from "readline";
 
+// ==========================================
 // 1. STRUKTUR DATA MAHASISWA
+// ==========================================
+
 interface Mahasiswa {
   nim: string;
   nama: string;
@@ -10,7 +12,6 @@ interface Mahasiswa {
   nilaiUAS: number;
 }
 
-// 2. DATA AWAL MAHASISWA
 const daftarMahasiswa: Mahasiswa[] = [
   { nim: "246001", nama: "Andi", nilaiTugas: 85, nilaiUTS: 80, nilaiUAS: 90 },
   { nim: "246002", nama: "Budi", nilaiTugas: 75, nilaiUTS: 80, nilaiUAS: 85 },
@@ -19,15 +20,20 @@ const daftarMahasiswa: Mahasiswa[] = [
   { nim: "246005", nama: "Eko", nilaiTugas: 70, nilaiUTS: 78, nilaiUAS: 80 },
 ];
 
-// 3. INPUT DAN VALIDASI
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
 });
 
+// ==========================================
+// 2. INPUT DAN VALIDASI
+// ==========================================
+
 function tanya(pertanyaan: string): Promise<string> {
   return new Promise((resolve) => {
-    rl.question(pertanyaan, (jawaban: string) => resolve(jawaban));
+    rl.question(pertanyaan, (jawaban: string) => {
+      resolve(jawaban);
+    });
   });
 }
 
@@ -42,9 +48,9 @@ async function inputNilai(label: string): Promise<number> {
 
     if (input.trim() !== "" && nilaiValid(nilai)) {
       return nilai;
+    } else {
+      console.log("Input tidak valid. Masukkan angka 0 sampai 100.");
     }
-
-    console.log("Input tidak valid. Masukkan angka 0 sampai 100.");
   }
 }
 
@@ -52,12 +58,13 @@ async function inputNIM(): Promise<string> {
   while (true) {
     const nim = (await tanya("Masukkan NIM: ")).trim();
 
-    if (!/^\d+$/.test(nim)) {
-      console.log("NIM hanya boleh berisi angka.");
-      continue;
+    if (nim === "" || !/^\d+$/.test(nim)) {
+      console.log("NIM harus diisi dan hanya boleh berisi angka.");
+    } else if (nim.length < 5) {
+      console.log("NIM minimal terdiri dari 5 angka.");
+    } else {
+      return nim;
     }
-
-    return nim;
   }
 }
 
@@ -67,14 +74,43 @@ async function inputNama(): Promise<string> {
 
     if (nama === "" || !/[a-zA-Z]/.test(nama)) {
       console.log("Nama tidak boleh kosong dan harus mengandung huruf.");
-      continue;
+    } else {
+      return nama;
     }
-
-    return nama;
   }
 }
 
-// 4. FUNGSI READ - TAMPILKAN SELURUH MAHASISWA
+// ==========================================
+// 3. FUNGSI PERHITUNGAN
+// ==========================================
+
+function hitungNilaiAkhir(mahasiswa: Mahasiswa): number {
+  let nilaiAkhir = mahasiswa.nilaiTugas * 30;
+  nilaiAkhir += mahasiswa.nilaiUTS * 30;
+  nilaiAkhir += mahasiswa.nilaiUAS * 40;
+  nilaiAkhir /= 100;
+
+  return nilaiAkhir;
+}
+
+function tentukanPredikat(nilai: number): string {
+  if (nilai >= 85) {
+    return "A";
+  } else if (nilai >= 75) {
+    return "B";
+  } else if (nilai >= 65) {
+    return "C";
+  } else if (nilai >= 50) {
+    return "D";
+  } else {
+    return "E";
+  }
+}
+
+// ==========================================
+// 4. READ - TAMPILKAN SELURUH MAHASISWA
+// ==========================================
+
 function tampilkanMahasiswa(): void {
   console.log("\n===== DAFTAR MAHASISWA =====");
 
@@ -83,34 +119,36 @@ function tampilkanMahasiswa(): void {
     return;
   }
 
-  console.log(
-    "NIM".padEnd(12) +
-    "NAMA".padEnd(15) +
-    "TUGAS".padEnd(10) +
-    "UTS".padEnd(10) +
-    "UAS".padEnd(10)
-  );
+  for (const mahasiswa of daftarMahasiswa) {
+    const nilaiAkhir = hitungNilaiAkhir(mahasiswa);
 
-  console.log("-".repeat(57));
+    console.log("----------------------------------");
+    console.log(`NIM          : ${mahasiswa.nim}`);
+    console.log(`Nama         : ${mahasiswa.nama}`);
+    console.log(`Nilai Tugas  : ${mahasiswa.nilaiTugas}`);
+    console.log(`Nilai UTS    : ${mahasiswa.nilaiUTS}`);
+    console.log(`Nilai UAS    : ${mahasiswa.nilaiUAS}`);
+    console.log(`Nilai Akhir  : ${nilaiAkhir.toFixed(2)}`);
+    console.log(`Predikat     : ${tentukanPredikat(nilaiAkhir)}`);
+  }
 
-  daftarMahasiswa.forEach((m) => {
-    console.log(
-      m.nim.padEnd(12) +
-      m.nama.padEnd(15) +
-      String(m.nilaiTugas).padEnd(10) +
-      String(m.nilaiUTS).padEnd(10) +
-      String(m.nilaiUAS).padEnd(10)
-    );
-  });
+  console.log("----------------------------------");
 }
 
-// 5. FUNGSI CREATE - TAMBAH MAHASISWA
+// ==========================================
+// 5. CREATE - TAMBAH MAHASISWA
+// ==========================================
+
 async function tambahMahasiswa(): Promise<void> {
   console.log("\n===== TAMBAH MAHASISWA =====");
 
   const nim = await inputNIM();
 
-  if (daftarMahasiswa.some((m) => m.nim === nim)) {
+  const nimTerdaftar = daftarMahasiswa.some(
+    (mahasiswa) => mahasiswa.nim === nim
+  );
+
+  if (nimTerdaftar) {
     console.log("NIM sudah terdaftar.");
     return;
   }
@@ -120,52 +158,79 @@ async function tambahMahasiswa(): Promise<void> {
   const nilaiUTS = await inputNilai("Nilai UTS");
   const nilaiUAS = await inputNilai("Nilai UAS");
 
-  daftarMahasiswa.push({
+  const mahasiswaBaru: Mahasiswa = {
     nim,
     nama,
     nilaiTugas,
     nilaiUTS,
     nilaiUAS,
-  });
+  };
+
+  daftarMahasiswa.push(mahasiswaBaru);
 
   console.log("\nData mahasiswa berhasil ditambahkan!");
 }
 
-// 6. FUNGSI SEARCH - CARI MAHASISWA
+// ==========================================
+// 6. SEARCH - CARI MAHASISWA
+// ==========================================
+
 async function cariMahasiswa(): Promise<void> {
   console.log("\n===== CARI MAHASISWA =====");
 
   const nim = (await tanya("Masukkan NIM yang dicari: ")).trim();
 
-  const mahasiswa = daftarMahasiswa.find((m) => m.nim === nim);
+  const mahasiswa = daftarMahasiswa.find(
+    (data) => data.nim === nim
+  );
 
-  if (!mahasiswa) {
-    console.log("Data mahasiswa tidak ditemukan.");
-    return;
+  if (mahasiswa !== undefined) {
+    console.log("\nData mahasiswa ditemukan.");
+
+    const nilaiAkhir = hitungNilaiAkhir(mahasiswa);
+
+    // Nested if tiga tingkat
+    if (nilaiAkhir >= 0) {
+      if (nilaiAkhir >= 75) {
+        if (mahasiswa.nilaiUAS >= 75) {
+          console.log("Mahasiswa dinyatakan lulus dengan nilai UAS baik.");
+        } else {
+          console.log("Nilai akhir lulus, tetapi nilai UAS perlu ditingkatkan.");
+        }
+      } else {
+        console.log("Mahasiswa belum mencapai nilai kelulusan.");
+      }
+    }
+
+    console.log(`NIM         : ${mahasiswa.nim}`);
+    console.log(`Nama        : ${mahasiswa.nama}`);
+    console.log(`Nilai Akhir : ${nilaiAkhir.toFixed(2)}`);
+    console.log(`Predikat    : ${tentukanPredikat(nilaiAkhir)}`);
+  } else {
+    console.log("Mahasiswa tidak ditemukan.");
   }
-
-  console.log("\nData mahasiswa ditemukan:");
-  console.log(`NIM         : ${mahasiswa.nim}`);
-  console.log(`Nama        : ${mahasiswa.nama}`);
-  console.log(`Nilai Tugas : ${mahasiswa.nilaiTugas}`);
-  console.log(`Nilai UTS   : ${mahasiswa.nilaiUTS}`);
-  console.log(`Nilai UAS   : ${mahasiswa.nilaiUAS}`);
 }
 
-// 7. FUNGSI UPDATE - UBAH DATA MAHASISWA
+// ==========================================
+// 7. UPDATE - UBAH DATA MAHASISWA
+// ==========================================
+
 async function ubahMahasiswa(): Promise<void> {
   console.log("\n===== UBAH DATA MAHASISWA =====");
 
   const nim = (await tanya("Masukkan NIM mahasiswa: ")).trim();
 
-  const mahasiswa = daftarMahasiswa.find((m) => m.nim === nim);
+  const mahasiswa = daftarMahasiswa.find(
+    (data) => data.nim === nim
+  );
 
-  if (!mahasiswa) {
-    console.log("Data mahasiswa tidak ditemukan.");
+  if (mahasiswa === undefined) {
+    console.log("Mahasiswa tidak ditemukan.");
     return;
   }
 
-  console.log("\nMasukkan data baru:");
+  console.log("Masukkan data baru.");
+
   mahasiswa.nama = await inputNama();
   mahasiswa.nilaiTugas = await inputNilai("Nilai Tugas");
   mahasiswa.nilaiUTS = await inputNilai("Nilai UTS");
@@ -174,84 +239,133 @@ async function ubahMahasiswa(): Promise<void> {
   console.log("\nData mahasiswa berhasil diperbarui!");
 }
 
-// 8. FUNGSI DELETE - HAPUS MAHASISWA
+// ==========================================
+// 8. DELETE - HAPUS MAHASISWA
+// ==========================================
+
 async function hapusMahasiswa(): Promise<void> {
   console.log("\n===== HAPUS MAHASISWA =====");
 
   const nim = (await tanya("Masukkan NIM mahasiswa: ")).trim();
 
-  const index = daftarMahasiswa.findIndex((m) => m.nim === nim);
+  const indeks = daftarMahasiswa.findIndex(
+    (mahasiswa) => mahasiswa.nim === nim
+  );
 
-  if (index === -1) {
-    console.log("Data mahasiswa tidak ditemukan.");
+  if (indeks === -1) {
+    console.log("Mahasiswa tidak ditemukan.");
     return;
   }
 
-  const konfirmasi = (await tanya(
-    `Yakin ingin menghapus data ${daftarMahasiswa[index].nama}? (y/n): `
-  )).trim().toLowerCase();
+  const konfirmasi = (await tanya("Yakin ingin menghapus data? (y/n): "))
+    .trim()
+    .toLowerCase();
 
-  if (konfirmasi !== "y") {
+  if (konfirmasi === "y") {
+    daftarMahasiswa.splice(indeks, 1);
+    console.log("Data mahasiswa berhasil dihapus!");
+  } else {
     console.log("Penghapusan dibatalkan.");
-    return;
   }
-
-  daftarMahasiswa.splice(index, 1);
-  console.log("Data mahasiswa berhasil dihapus!");
 }
 
-// 9. FUNGSI STATISTIK NILAI
+// ==========================================
+// 9. FILTER - FILTER MAHASISWA LULUS
+// ==========================================
+
+function filterMahasiswa(): void {
+  console.log("\n===== MAHASISWA YANG LULUS =====");
+
+  const mahasiswaLulus = daftarMahasiswa.filter(
+    (mahasiswa) => hitungNilaiAkhir(mahasiswa) >= 75
+  );
+
+  if (mahasiswaLulus.length === 0) {
+    console.log("Tidak ada mahasiswa yang lulus.");
+    return;
+  }
+
+  for (const mahasiswa of mahasiswaLulus) {
+    console.log(
+      `${mahasiswa.nim} - ${mahasiswa.nama} - Nilai: ${hitungNilaiAkhir(mahasiswa).toFixed(2)}`
+    );
+  }
+}
+
+// ==========================================
+// 10. STATISTIK NILAI MAHASISWA
+// ==========================================
+
 function statistikNilai(): void {
   console.log("\n===== STATISTIK NILAI MAHASISWA =====");
 
-  if (daftarMahasiswa.length === 0) {
-    console.log("Belum ada data mahasiswa.");
+  const jumlahMahasiswa = daftarMahasiswa.length;
+
+  if (jumlahMahasiswa === 0) {
+    console.log("Belum ada data untuk dihitung.");
     return;
   }
 
-  const rataRata = (total: number): number => total / daftarMahasiswa.length;
+  let totalNilai = 0;
+  let nilaiTertinggi = 0;
+  let nilaiTerendah = 100;
+  let jumlahLulus = 0;
+  let jumlahTidakLulus = jumlahMahasiswa;
+  let jumlahNIMGanjil = 0;
 
-  const totalTugas = daftarMahasiswa.reduce(
-    (total, m) => total + m.nilaiTugas, 0
-  );
+  // Perulangan for
+  for (let i = 0; i < daftarMahasiswa.length; i++) {
+    const mahasiswa = daftarMahasiswa[i];
+    const nilaiAkhir = hitungNilaiAkhir(mahasiswa);
 
-  const totalUTS = daftarMahasiswa.reduce(
-    (total, m) => total + m.nilaiUTS, 0
-  );
+    totalNilai += nilaiAkhir;
 
-  const totalUAS = daftarMahasiswa.reduce(
-    (total, m) => total + m.nilaiUAS, 0
-  );
+    if (nilaiAkhir > nilaiTertinggi) {
+      nilaiTertinggi = nilaiAkhir;
+    }
 
-  const rataTugas = rataRata(totalTugas);
-  const rataUTS = rataRata(totalUTS);
-  const rataUAS = rataRata(totalUAS);
+    if (nilaiAkhir < nilaiTerendah) {
+      nilaiTerendah = nilaiAkhir;
+    }
 
-  console.log(`Jumlah mahasiswa : ${daftarMahasiswa.length}`);
-  console.log(`Rata-rata Tugas  : ${rataTugas.toFixed(2)}`);
-  console.log(`Rata-rata UTS    : ${rataUTS.toFixed(2)}`);
-  console.log(`Rata-rata UAS    : ${rataUAS.toFixed(2)}`);
+    if (nilaiAkhir >= 75) {
+      jumlahLulus += 1;
+      jumlahTidakLulus -= 1;
+    }
 
-  const nilaiTertinggi = [...daftarMahasiswa].sort(
-    (a, b) => b.nilaiUAS - a.nilaiUAS
-  )[0];
+    // Operator modulus untuk memeriksa NIM ganjil
+    const digitTerakhir = Number(mahasiswa.nim.slice(-1));
 
-  const nilaiTerendah = [...daftarMahasiswa].sort(
-    (a, b) => a.nilaiUAS - b.nilaiUAS
-  )[0];
+    if (digitTerakhir % 2 !== 0) {
+      jumlahNIMGanjil += 1;
+    }
+  }
 
-  console.log("\nBerdasarkan nilai UAS:");
-  console.log(
-    `Nilai tertinggi : ${nilaiTertinggi.nama} (${nilaiTertinggi.nilaiUAS})`
-  );
-  console.log(
-    `Nilai terendah  : ${nilaiTerendah.nama} (${nilaiTerendah.nilaiUAS})`
-  );
+  let rataRata = totalNilai / jumlahMahasiswa;
+
+  let persentaseLulus = jumlahLulus;
+  persentaseLulus *= 100;
+  persentaseLulus /= jumlahMahasiswa;
+
+  const selisihNilai = nilaiTertinggi - nilaiTerendah;
+
+  console.log(`Jumlah Mahasiswa  : ${jumlahMahasiswa}`);
+  console.log(`Rata-rata Nilai   : ${rataRata.toFixed(2)}`);
+  console.log(`Nilai Tertinggi   : ${nilaiTertinggi.toFixed(2)}`);
+  console.log(`Nilai Terendah    : ${nilaiTerendah.toFixed(2)}`);
+  console.log(`Selisih Nilai     : ${selisihNilai.toFixed(2)}`);
+  console.log(`Jumlah Lulus      : ${jumlahLulus}`);
+  console.log(`Jumlah Tidak Lulus: ${jumlahTidakLulus}`);
+  console.log(`Persentase Lulus  : ${persentaseLulus.toFixed(2)}%`);
+  console.log(`NIM Ganjil        : ${jumlahNIMGanjil}`);
 }
 
-// 10. MENU UTAMA
+// ==========================================
+// 11. MENU UTAMA
+// ==========================================
+
 async function menuUtama(): Promise<void> {
-  let berjalan = true;
+  let berjalan: boolean = true;
 
   while (berjalan) {
     console.log("\n==================================");
@@ -263,6 +377,7 @@ async function menuUtama(): Promise<void> {
     console.log("4. Ubah data mahasiswa");
     console.log("5. Hapus mahasiswa");
     console.log("6. Statistik nilai mahasiswa");
+    console.log("7. Filter mahasiswa lulus");
     console.log("0. Keluar");
     console.log("==================================");
 
@@ -272,32 +387,47 @@ async function menuUtama(): Promise<void> {
       case "1":
         tampilkanMahasiswa();
         break;
+
       case "2":
         await tambahMahasiswa();
         break;
+
       case "3":
         await cariMahasiswa();
         break;
+
       case "4":
         await ubahMahasiswa();
         break;
+
       case "5":
         await hapusMahasiswa();
         break;
+
       case "6":
         statistikNilai();
         break;
+
+      case "7":
+        filterMahasiswa();
+        break;
+
       case "0":
         console.log("\nTerima kasih telah menggunakan program.");
         berjalan = false;
         break;
+
       default:
-        console.log("Pilihan tidak valid. Silakan pilih menu 0 sampai 6.");
+        console.log("Pilihan tidak valid. Silakan pilih menu 0 sampai 7.");
+        break;
     }
   }
 }
 
-// 11. MENJALANKAN PROGRAM
+// ==========================================
+// 12. MENJALANKAN PROGRAM
+// ==========================================
+
 menuUtama()
   .then(() => {
     rl.close();
